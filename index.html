@@ -341,6 +341,34 @@ tbody tr:hover .row-del { opacity: 1; }
 .row-del:hover { background: var(--accent-red-soft); color: var(--accent-red); }
 .row-del svg { width: 14px; height: 14px; }
 
+.quick-add-row td { padding: 0.3rem 1rem; }
+.quick-add-row:hover { background: transparent; }
+.quick-add-row:focus-within { background: var(--doc); }
+.quick-add {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ash);
+}
+.quick-add svg { width: 13px; height: 13px; flex: none; }
+.quick-add input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  padding: 0.3rem 0;
+  color: var(--ink);
+  outline: none;
+}
+.quick-add input::placeholder { color: var(--ash); }
+.quick-add-row:focus-within .quick-add { color: var(--ink); }
+.empty-hint {
+  text-align: center;
+  color: var(--ash);
+  font-size: 0.8125rem;
+  margin-top: 1.5rem;
+}
+
 /* ---------- Board ---------- */
 .board {
   display: grid;
@@ -920,7 +948,7 @@ dialog::backdrop {
   .col { min-height: 7rem; }
   /* 防止 iOS 输入时自动放大页面 */
   .f-item input, .f-item textarea, .f-select, .cell-input, .date-input,
-  .bd-name, .bd-add input, .auth-card input { font-size: 16px; }
+  .bd-name, .bd-add input, .auth-card input, .quick-add input { font-size: 16px; }
   .f-grid { grid-template-columns: 1fr; }
   dialog, #bdDlg { width: calc(100vw - 1.5rem); }
   #detail { width: min(19rem, calc(100vw - 1.5rem)); }
@@ -981,7 +1009,7 @@ dialog::backdrop {
     <div class="header-user">
       <button type="button" class="hbtn" id="btnBoards">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.7M8 12.5v1.7M1.8 8h1.7M12.5 8h1.7M3.6 3.6l1.2 1.2M11.2 11.2l1.2 1.2M12.4 3.6l-1.2 1.2M4.8 11.2l-1.2 1.2"/></svg>
-        板块管理
+        分类管理
       </button>
       <span class="u-name" id="uName"></span>
       <button type="button" class="hbtn" id="btnLogout">退出</button>
@@ -1008,7 +1036,7 @@ dialog::backdrop {
           <input type="text" id="fTitle" placeholder="例如：季度文化活动策划方案" autocomplete="off">
         </div>
         <div class="f-item">
-          <label>所属板块</label>
+          <label>任务分类</label>
           <button type="button" class="f-select" data-kind="board"></button>
         </div>
         <div class="f-item">
@@ -1048,11 +1076,11 @@ dialog::backdrop {
 
 <dialog id="bdDlg">
   <div class="dlg-body">
-    <h2>板块管理</h2>
-    <p class="bd-hint">自定义所属板块与颜色；重命名或删除板块时，已有任务会自动同步。</p>
+    <h2>任务分类管理</h2>
+    <p class="bd-hint">自定义任务分类与颜色；重命名或删除分类时，已有任务会自动同步。</p>
     <div class="bd-list" id="bdList"></div>
     <div class="bd-add">
-      <input type="text" id="bdNewName" placeholder="新板块名称，例如：学习成长" maxlength="12" autocomplete="off">
+      <input type="text" id="bdNewName" placeholder="新分类名称，例如：学习成长" maxlength="12" autocomplete="off">
       <button type="button" class="btn btn-primary" id="bdAdd">添加</button>
     </div>
     <div class="f-error" id="bdError" role="alert"></div>
@@ -1101,15 +1129,15 @@ const OPTIONS = {
   importance: ['重要', '一般', '不重要'],
   status: ['待办', '进行中', '已完成'],
 };
-const DIM_LABEL = { board: '所属板块', urgency: '紧急程度', importance: '重要程度', status: '完成进度' };
-const DIM_SHORT = { board: '板块', urgency: '紧急', importance: '重要', status: '进度' };
+const DIM_LABEL = { board: '任务分类', urgency: '紧急程度', importance: '重要程度', status: '完成进度' };
+const DIM_SHORT = { board: '分类', urgency: '紧急', importance: '重要', status: '进度' };
 const BOARD_DIMS = [
   { key: 'status', label: '完成进度' },
-  { key: 'board', label: '所属板块' },
+  { key: 'board', label: '任务分类' },
   { key: 'urgency', label: '紧急程度' },
   { key: 'importance', label: '重要程度' },
 ];
-/* 板块可选配色（用户在板块管理中为每个板块挑选） */
+/* 分类可选配色（用户在分类管理中为每个分类挑选） */
 const PALETTE = {
   blue:   { main: '#2c84e0', soft: '#dceaf6', text: '#1d4ed8' },
   green:  { main: '#2c8c66', soft: '#d9eddf', text: '#2c8c66' },
@@ -1150,7 +1178,7 @@ const RANK = {
 const CHEV = '<svg viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 1l4 4 4-4"/></svg>';
 const GRAY_DOT = '#6c6e63';
 
-/* ---------- 板块（用户自定义，数据来自服务器） ---------- */
+/* ---------- 任务分类（用户自定义，数据来自服务器） ---------- */
 let boards = [];
 function rebuildRank() {
   RANK.board = {};
@@ -1221,7 +1249,7 @@ function save() {
   }, 250);
 }
 function saveBoards() {
-  return api('/api/boards', 'PUT', boards).catch(err => console.error('保存板块失败:', err));
+  return api('/api/boards', 'PUT', boards).catch(err => console.error('保存分类失败:', err));
 }
 
 function isOverdue(t) { return t.due < TODAY && t.status !== '已完成'; }
@@ -1334,6 +1362,10 @@ function closePop() {
   document.removeEventListener('mousedown', onDocDown, true);
 }
 function openMenu(anchor, kind, current, onPick, includeAll) {
+  /* Chrome 里模态 dialog 永远压在 popover 之上，因此从弹窗内打开菜单时，
+     需要把 popover 临时移进 dialog 内部，才能正常点选 */
+  const host = (dlg && dlg.open) ? dlg : (bdDlg && bdDlg.open) ? bdDlg : document.body;
+  if (pop.parentNode !== host) host.appendChild(pop);
   const opts = includeAll ? [null].concat(dimOptions(kind)) : dimOptions(kind);
   pop.innerHTML = opts.map(v => {
     const label = v === null ? '全部' : v;
@@ -1433,8 +1465,22 @@ function thSort(label, key) {
   return '<th class="' + cls + '" data-sort="' + key + '">' + label +
     '<span class="sort-arrow">' + CHEV + '</span></th>';
 }
+function quickAddRowHtml() {
+  return '<tr class="quick-add-row"><td colspan="9"><div class="quick-add">' +
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>' +
+    '<input type="text" id="quickAdd" placeholder="输入工作内容，回车快速添加任务" maxlength="80" autocomplete="off">' +
+    '</div></td></tr>';
+}
 function renderTable(el) {
-  if (!tasks.length) { el.innerHTML = emptyHtml('还没有任务，点击右下角按钮新建第一条任务。', true); bindEmpty(el); return; }
+  if (!tasks.length) {
+    el.innerHTML = '<div class="table-wrap"><table><thead><tr><th>工作内容</th>' +
+      '<th>任务分类</th><th>开始日期</th><th>截止日期</th><th>紧急程度</th>' +
+      '<th>重要程度</th><th>完成进度</th><th>备注</th><th></th></tr></thead><tbody>' +
+      quickAddRowHtml() + '</tbody></table></div>' +
+      '<p class="empty-hint">还没有任务。在上方输入工作内容并回车，或点击右下角按钮新建第一条任务。</p>';
+    bindTable(el);
+    return;
+  }
   const list = applySort(applyFilters(tasks, filters.table));
   let body;
   if (!list.length) {
@@ -1459,14 +1505,14 @@ function renderTable(el) {
     el.innerHTML = toolbarHtml('table', TABLE_DIMS) +
       '<div class="table-wrap"><table><thead><tr>' +
       '<th>工作内容</th>' +
-      thSort('所属板块', 'board') +
+      thSort('任务分类', 'board') +
       '<th>开始日期</th>' +
       thSort('截止日期', 'due') +
       thSort('紧急程度', 'urgency') +
       thSort('重要程度', 'importance') +
       thSort('完成进度', 'status') +
       '<th>备注</th><th></th>' +
-      '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+      '</tr></thead><tbody>' + rows + quickAddRowHtml() + '</tbody></table></div>';
     bindTable(el);
   }
   bindToolbar(el, 'table', TABLE_DIMS, () => renderTable($('#view')));
@@ -1512,6 +1558,22 @@ function bindTable(el) {
       }
     });
   });
+  const qa = $('#quickAdd', el);
+  if (qa) {
+    qa.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const title = qa.value.trim();
+        if (!title) return;
+        tasks.push({ id: uid(), title: title, board: boards[0] ? boards[0].name : '',
+          start: TODAY, due: TODAY, urgency: '一般', importance: '一般', status: '待办', note: '' });
+        save(); renderTable($('#view')); renderStats();
+        const again = $('#quickAdd');
+        if (again) again.focus();
+      } else if (e.key === 'Escape') {
+        qa.blur();
+      }
+    });
+  }
 }
 function startCellEdit(sp, field) {
   const t = findTask(sp.dataset.id);
@@ -1832,7 +1894,7 @@ $('#dlgDelete').addEventListener('click', () => {
 dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
 $('#fab').addEventListener('click', () => openDialog(null));
 
-/* ---------- 板块管理 ---------- */
+/* ---------- 任务分类管理 ---------- */
 const bdDlg = $('#bdDlg');
 function renderBoardRows() {
   $('#bdError').textContent = '';
@@ -1843,7 +1905,7 @@ function renderBoardRows() {
     return '<div class="bd-row" data-id="' + b.id + '">' +
       '<input type="text" class="bd-name" data-id="' + b.id + '" value="' + esc(b.name) + '" maxlength="12">' +
       '<span class="swatches">' + swatches + '</span>' +
-      '<button type="button" class="bd-del" data-id="' + b.id + '" aria-label="删除板块"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4h11M6 4V2.8c0-.4.3-.8.8-.8h2.4c.5 0 .8.4.8.8V4M4 4l.6 9c0 .6.4 1 1 1h4.8c.6 0 1-.4 1-1l.6-9"/></svg></button>' +
+      '<button type="button" class="bd-del" data-id="' + b.id + '" aria-label="删除分类"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4h11M6 4V2.8c0-.4.3-.8.8-.8h2.4c.5 0 .8.4.8.8V4M4 4l.6 9c0 .6.4 1 1 1h4.8c.6 0 1-.4 1-1l.6-9"/></svg></button>' +
       '</div>';
   }).join('');
   $$('.bd-name', bdDlg).forEach(inp => {
@@ -1852,7 +1914,7 @@ function renderBoardRows() {
       const v = inp.value.trim();
       if (!b) return;
       if (!v || boards.some(x => x !== b && x.name === v)) {
-        $('#bdError').textContent = !v ? '板块名称不能为空。' : '板块名称不能重复。';
+        $('#bdError').textContent = !v ? '分类名称不能为空。' : '分类名称不能重复。';
         inp.value = b.name;
         return;
       }
@@ -1880,9 +1942,9 @@ function renderBoardRows() {
     btn.addEventListener('click', () => {
       const b = boards.find(x => x.id === btn.dataset.id);
       if (!b) return;
-      if (boards.length <= 1) { $('#bdError').textContent = '至少保留一个板块。'; return; }
+      if (boards.length <= 1) { $('#bdError').textContent = '至少保留一个分类。'; return; }
       const n = tasks.filter(t => t.board === b.name).length;
-      const msg = n ? '删除板块「' + b.name + '」？其中 ' + n + ' 条任务将移入第一个板块。' : '删除板块「' + b.name + '」？';
+      const msg = n ? '删除分类「' + b.name + '」？其中 ' + n + ' 条任务将移入第一个分类。' : '删除分类「' + b.name + '」？';
       if (!window.confirm(msg)) return;
       boards = boards.filter(x => x.id !== b.id);
       tasks.forEach(t => { if (t.board === b.name) t.board = boards[0].name; });
@@ -1899,8 +1961,8 @@ $('#btnBoards').addEventListener('click', () => {
 $('#bdAdd').addEventListener('click', () => {
   const inp = $('#bdNewName');
   const name = inp.value.trim();
-  if (!name) { $('#bdError').textContent = '请输入板块名称。'; inp.focus(); return; }
-  if (boards.some(b => b.name === name)) { $('#bdError').textContent = '板块「' + name + '」已存在。'; return; }
+  if (!name) { $('#bdError').textContent = '请输入分类名称。'; inp.focus(); return; }
+  if (boards.some(b => b.name === name)) { $('#bdError').textContent = '分类「' + name + '」已存在。'; return; }
   const used = boards.map(b => b.color);
   const color = Object.keys(PALETTE).find(k => !used.includes(k)) || 'gray';
   boards.push({ id: uid(), name, color });

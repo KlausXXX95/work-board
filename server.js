@@ -283,7 +283,7 @@ const server = http.createServer(async (req, res) => {
 
     if (p === '/api/boards' && req.method === 'PUT') {
       const body = await readBody(req);
-      if (!Array.isArray(body) || body.length < 1 || body.length > 50) return sendJson(res, 400, { error: '至少保留一个板块。' });
+      if (!Array.isArray(body) || body.length < 1 || body.length > 50) return sendJson(res, 400, { error: '至少保留一个分类。' });
       const items = [];
       const seen = new Set();
       for (let i = 0; i < body.length; i++) {
@@ -293,7 +293,7 @@ const server = http.createServer(async (req, res) => {
         const color = PALETTE_KEYS.includes(body[i].color) ? body[i].color : 'gray';
         items.push({ id: cleanStr(body[i].id, 40) || uid(), name, color, pos: items.length });
       }
-      if (!items.length) return sendJson(res, 400, { error: '至少保留一个板块。' });
+      if (!items.length) return sendJson(res, 400, { error: '至少保留一个分类。' });
       db.exec('BEGIN');
       try {
         db.prepare('DELETE FROM boards WHERE user_id = ?').run(me.user_id);
