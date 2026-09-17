@@ -229,10 +229,27 @@ const server = http.createServer(async (req, res) => {
     }
 
     /* ---------- 静态页面（登录态由页面内的 /api/me 判断） ---------- */
-    if (req.method === 'GET' && (p === '/' || p === '/index.html')) {
-      const html = fs.readFileSync(path.join(ROOT, 'index.html'));
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
-      return res.end(html);
+    if (req.method === 'GET') {
+      if (p === '/' || p === '/index.html') {
+        const html = fs.readFileSync(path.join(ROOT, 'index.html'));
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+        return res.end(html);
+      }
+      if (p === '/sw.js') {
+        res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' });
+        return res.end(fs.readFileSync(path.join(ROOT, 'sw.js')));
+      }
+      if (p === '/manifest.webmanifest') {
+        res.writeHead(200, { 'Content-Type': 'application/manifest+json; charset=utf-8', 'Cache-Control': 'no-cache' });
+        return res.end(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest')));
+      }
+      if (p.startsWith('/icons/') && /^[\w.-]+\.png$/.test(p.slice(7))) {
+        const f = path.join(ROOT, 'icons', p.slice(7));
+        if (fs.existsSync(f)) {
+          res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'max-age=86400' });
+          return res.end(fs.readFileSync(f));
+        }
+      }
     }
 
     const me = getSessionUser(req);

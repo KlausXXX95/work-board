@@ -2,6 +2,8 @@
 
 带账号系统的多视图工作看板：表格 / 看板（可拖拽）/ 甘特图，支持自定义所属板块与颜色。
 
+PWA 应用：手机浏览器打开后可通过「添加到主屏幕」安装为独立应用（iOS：Safari 分享菜单 → 添加到主屏幕；Android：Chrome 菜单 → 安装应用），图标、启动画面齐备，弱网/离线时界面仍可打开（数据需联网）。
+
 ## 启动
 
 ```bash
@@ -37,5 +39,6 @@ node server.js
 
 - `server.js` — 后端（HTTP + SQLite + 会话 + 备份 + 迁移）
 - `index.html` — 前端（单文件，无构建）
+- `manifest.webmanifest` / `sw.js` / `icons/` — PWA 清单、离线缓存、应用图标
 - `data.sqlite` — 数据库（首次启动自动创建，已 gitignore）
 - `backups/` — 自动备份目录（已 gitignore）

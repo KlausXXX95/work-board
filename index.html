@@ -2,8 +2,15 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>个人工作看板</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>工作看板</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#eeefe9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="工作看板">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<script>if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('/sw.js');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -371,6 +378,7 @@ tbody tr:hover .row-del { opacity: 1; }
 }
 .cards { display: flex; flex-direction: column; gap: 0.6rem; min-height: 3rem; }
 .card {
+  position: relative;
   background: var(--doc);
   border: 1px solid var(--hairline-soft);
   border-radius: var(--r-md);
@@ -379,6 +387,21 @@ tbody tr:hover .row-del { opacity: 1; }
   transition: border-color 0.18s var(--ease), opacity 0.18s var(--ease), transform 0.18s var(--ease);
   animation: cardIn 0.35s var(--ease) backwards;
 }
+.card-move {
+  display: none;
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  color: var(--ash);
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+}
+.card-move:hover { background: var(--surface-soft); color: var(--ink); }
+.card-move svg { width: 15px; height: 15px; }
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
@@ -882,6 +905,45 @@ dialog::backdrop {
   .views { padding: 1rem 1rem 7rem; }
   .table-wrap { overflow-x: auto; }
   .fab { right: 1rem; bottom: 1rem; }
+}
+
+@media (max-width: 640px) {
+  .header-inner { gap: 0.55rem; padding: 0.6rem 0.9rem; }
+  .brand h1 { font-size: 1.1rem; }
+  .brand .today-sub { font-size: 0.75rem; }
+  .seg-btn { padding: 0.34rem 0.7rem; font-size: 0.78rem; }
+  .stats { font-size: 0.75rem; gap: 0.65rem; flex-wrap: wrap; }
+  .header-user { margin-left: 0; }
+  .views { padding: 0.9rem 0.9rem 6.5rem; }
+  thead th, tbody td { padding: 0.5rem 0.6rem; }
+  .table-wrap td:first-child { min-width: 9rem; }
+  .col { min-height: 7rem; }
+  /* 防止 iOS 输入时自动放大页面 */
+  .f-item input, .f-item textarea, .f-select, .cell-input, .date-input,
+  .bd-name, .bd-add input, .auth-card input { font-size: 16px; }
+  .f-grid { grid-template-columns: 1fr; }
+  dialog, #bdDlg { width: calc(100vw - 1.5rem); }
+  #detail { width: min(19rem, calc(100vw - 1.5rem)); }
+  /* 甘特图：收窄左侧任务名列 */
+  .g-left { width: 7.5rem; }
+  .g-left-head { padding: 0 0.6rem; font-size: 0.7rem; }
+  .g-name { padding: 0 0.6rem; font-size: 0.75rem; gap: 0.35rem; }
+  /* 适配刘海屏底部 */
+  .fab { bottom: calc(1rem + env(safe-area-inset-bottom)); }
+  .views { padding-bottom: calc(6.5rem + env(safe-area-inset-bottom)); }
+}
+
+/* ---------- 触屏设备：加大点按目标，隐藏类元素常显 ---------- */
+@media (pointer: coarse) {
+  .pill { min-height: 30px; padding-top: 0.2rem; padding-bottom: 0.2rem; }
+  .filter-chip { min-height: 34px; }
+  .hbtn { min-height: 34px; }
+  .pop-item { min-height: 40px; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+  .row-del { opacity: 1; }
+  .card-move { display: inline-flex; }
+  .card-title { padding-right: 1.7rem; }
+  .seg-btn { min-height: 34px; }
+  .sw { width: 22px; height: 22px; }
 }
 
 /* ---------- Reduced motion ---------- */
@@ -1488,6 +1550,7 @@ function snapshotRects() {
 function cardHtml(t, i) {
   const od = isOverdue(t);
   return '<article class="card" draggable="true" data-id="' + t.id + '" style="animation-delay:' + Math.min(i, 8) * 40 + 'ms">' +
+    '<button type="button" class="card-move" data-id="' + t.id + '" aria-label="移动到其他列" title="移动到其他列"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5h9M9 3l2.5 2.5L9 8M14 10.5H5M7 8 4.5 10.5 7 13"/></svg></button>' +
     '<div class="card-title">' + esc(t.title) + '</div>' +
     (t.note ? '<div class="card-note" title="' + esc(t.note) + '">' + esc(t.note) + '</div>' : '') +
     '<div class="card-meta">' + pillStatic('board', t.board) + pillStatic('urgency', t.urgency) + pillStatic('importance', t.importance) +
@@ -1551,6 +1614,21 @@ function moveTask(id, dim, value, beforeId) {
   tasks.splice(insertAt, 0, t);
 }
 function bindBoard(el) {
+  $$('.card-move', el).forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const t = findTask(btn.dataset.id);
+      if (!t) return;
+      openMenu(btn, boardDim, t[boardDim], v => {
+        if (!v || v === t[boardDim]) return;
+        const rects = snapshotRects();
+        moveTask(t.id, boardDim, v, null);
+        save();
+        renderBoard($('#view'), rects);
+        renderStats();
+      });
+    });
+  });
   $$('.card', el).forEach(card => {
     card.addEventListener('dragstart', e => {
       draggedId = card.dataset.id;
